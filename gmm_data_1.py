@@ -45,4 +45,27 @@ def Initialization(data, k, dim):
     
     return mean_vecs, cov_matrices, mixture_coefficients
 
-mean, cov, mix = Initialization(data_1, 2, 2)
+
+def LogLikelihood(data, k, mean_vecs, cov_matrices, mix_coef, dim):
+    
+    def gaussian_density(x, mean, cov):
+        x = np.array(x)
+        mean = np.array(mean)
+        matrix_mul = np.matmul((x-mean), np.transpose(cov))
+        matrix_mul = np.matmul(matrix_mul, (x-mean).reshape((dim,1)))
+        res = np.exp(-0.5*matrix_mul)
+        res = res*(1/((2*np.pi)**(dim/2)*np.sqrt(np.linalg.det(cov))))
+        return res
+    
+    log_likelihood = 0
+    
+    for i in range(len(data)):
+        for j in range(k):
+            x = data[i]
+            k_val = j
+            log_likelihood += mix_coef[k_val]*gaussian_density(x, mean_vecs[k_val], cov_matrices[k_val])
+
+    return log_likelihood
+
+mean, cov, mix_coef = Initialization(data_1, 2, 2)
+print("log likelihood for first iteration = ", LogLikelihood(data_1, 2, mean, cov, mix_coef, 2))
