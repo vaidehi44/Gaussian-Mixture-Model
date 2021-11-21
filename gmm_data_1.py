@@ -86,9 +86,7 @@ def Prior_prob(k, k_val, x, mean_vecs, cov_matrs, mix_coef, dim):
      
 def GMM(data, k, dim):
     mean_vecs, cov_matrs, mix_coef = Initialization(data, k, dim)
-    
-    initial_log_like = LogLikelihood(data, k, mean_vecs, cov_matrs, mix_coef, dim)
-    
+        
     def no_of_points_assigned(mean_vecs, cov_matrs, mix_coef):
         assigned_k = []
         for i in range(len(data)):
@@ -101,14 +99,14 @@ def GMM(data, k, dim):
                     assigned_k_val=j
             assigned_k.append(assigned_k_val)
         
-        res = []
+        no_of_points = []
         for i in range(k):
-            res.append(assigned_k.count(i))
-        return res
+            no_of_points.append(assigned_k.count(i))
+        return no_of_points, assigned_k
     
-    def new_means(curr_means, curr_covs, curr_mix):
+    def get_new_means(curr_means, curr_covs, curr_mix):
         means = []
-        no_of_points = no_of_points_assigned(curr_means, curr_covs, curr_mix)
+        no_of_points = no_of_points_assigned(curr_means, curr_covs, curr_mix)[0]
         
         for i in range(k):
             mean_vec_i = np.zeros(dim)
@@ -119,9 +117,9 @@ def GMM(data, k, dim):
              
         return means
     
-    def new_covs(curr_means, curr_covs, curr_mix):
+    def get_new_covs(curr_means, curr_covs, curr_mix):
         covs = []
-        no_of_points = no_of_points_assigned(curr_means, curr_covs, curr_mix)
+        no_of_points = no_of_points_assigned(curr_means, curr_covs, curr_mix)[0]
         
         for i in range(k):
             cov_vec_i = np.zeros((dim, dim))
@@ -134,9 +132,9 @@ def GMM(data, k, dim):
             
         return covs
     
-    def new_mix_coefs(curr_means, curr_covs, curr_mix):
+    def get_new_mix_coefs(curr_means, curr_covs, curr_mix):
         mix_coefs = []
-        no_of_points = no_of_points_assigned(curr_means, curr_covs, curr_mix)
+        no_of_points = no_of_points_assigned(curr_means, curr_covs, curr_mix)[0]
         
         for i in range(k):
             mix_coefs.append(no_of_points[i]/len(data))
@@ -146,23 +144,19 @@ def GMM(data, k, dim):
     curr_means = mean_vecs
     curr_covs = cov_matrs
     curr_mix_coef = mix_coef
-    log_like = initial_log_like
-    print("initialized -", curr_means, curr_covs, curr_mix_coef)
+    log_likelihood = LogLikelihood(data, k, curr_means, curr_covs, curr_mix_coef, dim)
     
-    for i in range(10):
-        print("iteration -",i)
-        means = new_means(curr_means, curr_covs, curr_mix_coef)
-        covs = new_covs(curr_means, curr_covs, curr_mix_coef)
-        mix_coefs = new_mix_coefs(curr_means, curr_covs, curr_mix_coef)
-        log_likelihood = LogLikelihood(data, k, means, covs, mix_coefs, dim)
-        print(log_likelihood)
-        curr_means = means
-        curr_covs = covs
-        curr_mix_coef = mix_coefs
-        log_like = log_likelihood
-        print(curr_means, curr_covs, curr_mix_coef)
+    for i in range(2):
+        new_means = get_new_means(curr_means, curr_covs, curr_mix_coef)
+        new_covs = get_new_covs(curr_means, curr_covs, curr_mix_coef)
+        new_mix_coefs = get_new_mix_coefs(curr_means, curr_covs, curr_mix_coef)
+        new_log_likelihood = LogLikelihood(data, k, new_means, new_covs, new_mix_coefs, dim)
+        curr_means = new_means
+        curr_covs = new_covs
+        curr_mix_coef = new_mix_coefs
+        log_likelihood = new_log_likelihood
     
-    
+
     plt.scatter([x[0] for x in data_1_class1], [x[1] for x in data_1_class1])
     plt.scatter([x[0] for x in data_1_class2], [x[1] for x in data_1_class2])
     
