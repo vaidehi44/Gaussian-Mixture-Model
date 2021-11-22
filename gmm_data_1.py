@@ -26,15 +26,29 @@ data_1.extend(data_1_class2)
 
 
 def Initialization(data, k, dim):
+    mean_vecs_1 = []
+    mean_indices_1 = []
+    mean_vecs_2 = []
+    mean_indices_2 = []
+    k_half = k//2
     mean_vecs = []
-    mean_indices = []
-    while (len(mean_vecs)<k):
-        index = random.randint(0, len(data)-1)
-        if index not in mean_indices:
-            mean_vecs.append(data[index])
-            mean_indices.append(index)
+    while (len(mean_vecs_1)<k_half):
+        index = random.randint(0, len(data_1_class1)-1)
+        if index not in mean_indices_1:
+            mean_vecs_1.append(data_1_class1[index])
+            mean_indices_1.append(index)
         else:
             continue
+    while (len(mean_vecs_2)<(k-k_half)):
+        index = random.randint(0, len(data_1_class2)-1)
+        if index not in mean_indices_2:
+            mean_vecs_2.append(data_1_class2[index])
+            mean_indices_2.append(index)
+        else:
+            continue
+    
+    mean_vecs.extend(mean_vecs_1)
+    mean_vecs.extend(mean_vecs_2)
     
     cov_matrices = []
     for i in range(k):
@@ -51,9 +65,7 @@ def gaussian_density(x, mean, cov, dim):
     mean = np.array(mean)
     matrix_mul = np.matmul((x-mean), np.linalg.inv(cov))
     matrix_mul = np.matmul(matrix_mul, (x-mean).reshape((dim,1)))
-    #print("matrix_mul", matrix_mul)
     res = np.exp(-0.5*matrix_mul)
-    #print("res", res)
     res = res*(1/((2*np.pi)**(dim/2)*np.sqrt(np.linalg.det(cov))))
     return res
 
@@ -79,7 +91,6 @@ def Prior_prob(k, k_val, x, mean_vecs, cov_matrs, mix_coef, dim):
         evidence += mix_coef[i]*gaussian_density(x, mean_vecs[i], cov_matrs[i], dim)
         #print(evidence, mix_coef, gaussian_density(x, mean_vecs[i], cov_matrs[i], dim))
     prior = mix_coef[k_val]*gaussian_density(x, mean_vecs[k_val], cov_matrs[k_val], dim)
-    
     prior = prior/evidence
     return prior    
     
@@ -146,7 +157,7 @@ def GMM(data, k, dim):
     curr_mix_coef = mix_coef
     log_likelihood = LogLikelihood(data, k, curr_means, curr_covs, curr_mix_coef, dim)
     
-    for i in range(8):
+    for i in range(10):
         new_means = get_new_means(curr_means, curr_covs, curr_mix_coef)
         new_covs = get_new_covs(curr_means, curr_covs, curr_mix_coef)
         new_mix_coefs = get_new_mix_coefs(curr_means, curr_covs, curr_mix_coef)
@@ -154,11 +165,13 @@ def GMM(data, k, dim):
         curr_means = new_means
         curr_covs = new_covs
         curr_mix_coef = new_mix_coefs
+        print(log_likelihood)
         log_likelihood = new_log_likelihood
     
     data_assignment = no_of_points_assigned(curr_means, curr_covs, curr_mix_coef)[1]
     
     plt.figure(figsize=(15,6))
+    plt.suptitle("GMM on data_1 with K=%d"%(k), fontsize=22)
     plt.subplot(1,2,1)
     plt.scatter([x[0] for x in data_1_class1], [x[1] for x in data_1_class1])
     plt.scatter([x[0] for x in data_1_class2], [x[1] for x in data_1_class2])
