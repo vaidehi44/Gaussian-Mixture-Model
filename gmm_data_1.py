@@ -1,6 +1,8 @@
 import numpy as np
 import random
 import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix, accuracy_score
+from sklearn.model_selection import train_test_split
 
 
 data_1_file1 = open('./data_1/class1.txt')
@@ -11,20 +13,19 @@ data_1_class2 = []
 
 for line in data_1_file1:
     data=line.split(',')
-    data_1_class1.append([float(data[0]), float(data[1])])
+    data_1_class1.append([float(data[0]), float(data[1]), 0])
 
 for line in data_1_file2:
     data=line.split(',')
-    data_1_class2.append([float(data[0]), float(data[1])])
+    data_1_class2.append([float(data[0]), float(data[1]), 1])
 
-#plt.scatter([x[0] for x in data_1_class1], [x[1] for x in data_1_class1])
-#plt.scatter([x[0] for x in data_1_class2], [x[1] for x in data_1_class2])
 
 data_1 = []
 data_1.extend(data_1_class1)
 data_1.extend(data_1_class2)
+X_train, X_test, y_train, y_test = train_test_split([[x[0], x[1]] for x in data_1], [x[2] for x in data_1], test_size=0.20, random_state=42)
 
-
+    
 def Initialization(data, k, dim):
     mean_vecs_1 = []
     mean_indices_1 = []
@@ -35,14 +36,14 @@ def Initialization(data, k, dim):
     while (len(mean_vecs_1)<k_half):
         index = random.randint(0, len(data_1_class1)-1)
         if index not in mean_indices_1:
-            mean_vecs_1.append(data_1_class1[index])
+            mean_vecs_1.append(data_1_class1[index][:2])
             mean_indices_1.append(index)
         else:
             continue
     while (len(mean_vecs_2)<(k-k_half)):
         index = random.randint(0, len(data_1_class2)-1)
         if index not in mean_indices_2:
-            mean_vecs_2.append(data_1_class2[index])
+            mean_vecs_2.append(data_1_class2[index][:2])
             mean_indices_2.append(index)
         else:
             continue
@@ -89,13 +90,12 @@ def Prior_prob(k, k_val, x, mean_vecs, cov_matrs, mix_coef, dim):
     evidence = 0
     for i in range(k):
         evidence += mix_coef[i]*gaussian_density(x, mean_vecs[i], cov_matrs[i], dim)
-        #print(evidence, mix_coef, gaussian_density(x, mean_vecs[i], cov_matrs[i], dim))
     prior = mix_coef[k_val]*gaussian_density(x, mean_vecs[k_val], cov_matrs[k_val], dim)
     prior = prior/evidence
     return prior    
     
      
-def GMM(data, k, dim):
+def GMM(data, test_data, test_data_true_class, k, dim):
     mean_vecs, cov_matrs, mix_coef = Initialization(data, k, dim)
         
     def no_of_points_assigned(mean_vecs, cov_matrs, mix_coef):
@@ -157,7 +157,7 @@ def GMM(data, k, dim):
     curr_mix_coef = mix_coef
     log_likelihood = LogLikelihood(data, k, curr_means, curr_covs, curr_mix_coef, dim)
     
-    for i in range(10):
+    for i in range(8):
         new_means = get_new_means(curr_means, curr_covs, curr_mix_coef)
         new_covs = get_new_covs(curr_means, curr_covs, curr_mix_coef)
         new_mix_coefs = get_new_mix_coefs(curr_means, curr_covs, curr_mix_coef)
@@ -165,26 +165,47 @@ def GMM(data, k, dim):
         curr_means = new_means
         curr_covs = new_covs
         curr_mix_coef = new_mix_coefs
-        print(log_likelihood)
         log_likelihood = new_log_likelihood
     
     data_assignment = no_of_points_assigned(curr_means, curr_covs, curr_mix_coef)[1]
     
     plt.figure(figsize=(15,6))
-    plt.suptitle("GMM on data_1 with K=%d"%(k), fontsize=22)
+    plt.suptitle("GMM Clustering on data_1 with K=%d"%(k), fontsize=22)
     plt.subplot(1,2,1)
+    plt.title("Original classes", fontsize=18)
     plt.scatter([x[0] for x in data_1_class1], [x[1] for x in data_1_class1])
     plt.scatter([x[0] for x in data_1_class2], [x[1] for x in data_1_class2])
     
     plt.subplot(1,2,2)
-    
+    plt.title("Classes after clustering", fontsize=18)
     for i in range(k):
         indices = np.where(np.array(data_assignment, dtype=object)==i)
-        plt.scatter([x[0] for x in np.array(data_1)[indices]], [x[1] for x in np.array(data_1)[indices]])
+        plt.scatter([x[0] for x in np.array(X_train)[indices]], [x[1] for x in np.array(X_train)[indices]])
         
     plt.scatter([i[0] for i in curr_means],[i[1] for i in curr_means], color="black")
     
-GMM(data_1, 2, 2)
+    
+    #Code for getting accuracy if k=2
+    if k==2:
+        assigned_k = [] #predicted classes
+        for i in range(len(test_data)):
+            prior = Prior_prob(k, 0, test_data[i], curr_means, curr_covs, curr_mix_coef, dim)
+            assigned_k_val = 0
+            for j in range(1,k):
+                temp = Prior_prob(k, j, test_data[i], curr_means, curr_covs, curr_mix_coef, dim)
+                if temp>prior:
+                    prior=temp
+                    assigned_k_val=j
+            assigned_k.append(assigned_k_val)
+        
+        
+        confusion_mat = confusion_matrix(test_data_true_class, assigned_k)   
+        accuracy = accuracy_score(test_data_true_class, assigned_k)
+        print("Confusion matrix is -\n", confusion_mat)
+        print("Accuracy is = ", accuracy)
+         
+    
+GMM(X_train, X_test, y_test, 2, 2)
         
                  
             
