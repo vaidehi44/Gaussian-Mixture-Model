@@ -146,7 +146,7 @@ def GMM(data, k, dim):
     curr_mix_coef = mix_coef
     log_likelihood = LogLikelihood(data, k, curr_means, curr_covs, curr_mix_coef, dim)
     
-    for i in range(2):
+    for i in range(8):
         new_means = get_new_means(curr_means, curr_covs, curr_mix_coef)
         new_covs = get_new_covs(curr_means, curr_covs, curr_mix_coef)
         new_mix_coefs = get_new_mix_coefs(curr_means, curr_covs, curr_mix_coef)
@@ -156,15 +156,24 @@ def GMM(data, k, dim):
         curr_mix_coef = new_mix_coefs
         log_likelihood = new_log_likelihood
     
-
+    data_assignment = no_of_points_assigned(curr_means, curr_covs, curr_mix_coef)[1]
+    
+    plt.figure(figsize=(15,6))
+    plt.subplot(1,2,1)
     plt.scatter([x[0] for x in data_1_class1], [x[1] for x in data_1_class1])
     plt.scatter([x[0] for x in data_1_class2], [x[1] for x in data_1_class2])
     
-    plt.scatter([i[0] for i in curr_means],[i[1] for i in curr_means])
+    plt.subplot(1,2,2)
+    
+    for i in range(k):
+        indices = np.where(np.array(data_assignment, dtype=object)==i)
+        plt.scatter([x[0] for x in np.array(data_1)[indices]], [x[1] for x in np.array(data_1)[indices]])
         
-GMM(data_1, 4, 2)
+    plt.scatter([i[0] for i in curr_means],[i[1] for i in curr_means], color="black")
+    
+GMM(data_1, 2, 2)
         
-        
+                 
             
         
         
