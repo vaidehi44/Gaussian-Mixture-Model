@@ -167,7 +167,7 @@ def GMM(data, test_data, test_data_true_class, k, dim):
     data_assignment = no_of_points_assigned(curr_means, curr_covs, curr_mix_coef)[1]
     
     plt.figure(figsize=(15,6))
-    plt.suptitle("GMM Clustering on data_1 with K=%d"%(k), fontsize=22)
+    plt.suptitle("GMM Clustering on data_2 with K=%d"%(k), fontsize=22)
     plt.subplot(1,2,1)
     plt.title("Original classes", fontsize=18)
     plt.scatter([x[0] for x in data_2_class1], [x[1] for x in data_2_class1], color="darkblue", label="class 0")
